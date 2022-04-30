@@ -77,7 +77,7 @@ class SentenceAligner(object):
 			"bert": "bert-base-multilingual-cased",
 			"xlmr": "xlm-roberta-base"
 			}
-		all_matching_methods = {"a": "inter", "m": "mwmf", "i": "itermax", "f": "fwd", "r": "rev"}
+		all_matching_methods = {"a": "inter", "m": "mwmf", "i": "itermax", "f": "fwd", "r": "rev", "u": "union"}
 
 		self.model = model
 		if model in model_names:
@@ -218,6 +218,7 @@ class SentenceAligner(object):
 
 		all_mats["fwd"], all_mats["rev"] = self.get_alignment_matrix(sim)
 		all_mats["inter"] = all_mats["fwd"] * all_mats["rev"]
+		all_mats["union"] = all_mats["fwd"] + all_mats["rev"]
 		if "mwmf" in self.matching_methods:
 			all_mats["mwmf"] = self.get_max_weight_match(sim)
 		if "itermax" in self.matching_methods:
