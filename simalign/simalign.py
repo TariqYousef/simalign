@@ -3,7 +3,7 @@
 import os
 import logging
 from typing import Dict, List, Tuple, Union
-
+from scipy.special import softmax
 import numpy as np
 from scipy.stats import entropy
 from scipy.sparse import csr_matrix
@@ -78,13 +78,13 @@ class EmbeddingLoader(object):
 
 class SentenceAligner(object):
     def __init__(self, model: str = "bert", token_type: str = "bpe", distortion: float = 0.0,
-                 matching_methods: str = "mai", device: str = "cpu", layer: int = 8):
+                 matching_methods: str = "mai", device: str = "cpu", layer: int = 8, distance: str = "cos"):
         model_names = {
             "bert": "bert-base-multilingual-cased",
             "xlmr": "xlm-roberta-base"
         }
         all_matching_methods = {"a": "inter", "m": "mwmf", "i": "itermax", "f": "fwd", "r": "rev", "u": "union",
-                                "x": "mwmf_union"}
+                                "x": "mwmf_union", "y": "mwmf_soft_union", "z": "softmax_inter", "U": "softmax_union"}
 
         self.model = model
         if model in model_names:
@@ -117,8 +117,11 @@ class SentenceAligner(object):
         return res_matrix
 
     @staticmethod
-    def get_similarity(X: np.ndarray, Y: np.ndarray) -> np.ndarray:
-        return (cosine_similarity(X, Y) + 1.0) / 2.0
+    def get_similarity(X: np.ndarray, Y: np.ndarray, func="cos") -> np.ndarray:
+        if func == "cos":
+            return (cosine_similarity(X, Y) + 1.0) / 2.0
+        else:
+            return X.dot(Y.transpose())
 
     @staticmethod
     def average_embeds_over_words(bpe_vectors: np.ndarray, word_tokens_pair: List[List[str]]) -> List[np.array]:
@@ -152,6 +155,14 @@ class SentenceAligner(object):
         forward = np.eye(n)[sim_matrix.argmax(axis=1)]  # m x n
         backward = np.eye(m)[sim_matrix.argmax(axis=0)]  # n x m
         return forward, backward.transpose()
+
+    @staticmethod
+    def get_alignment_matrix_softmax(sim_matrix: np.ndarray, threshold=1e-3) -> Tuple[np.ndarray, np.ndarray]:
+        forward = softmax(sim_matrix, axis=1)  # np.eye(n)[sim_matrix.argmax(axis=1)]  # m x n
+        backward = softmax(sim_matrix, axis=0)  # n x m
+        softmax_inter = (forward > threshold) * (backward > threshold)
+        softmax_union = (forward > threshold) + (backward > threshold)
+        return softmax_inter, softmax_union
 
     @staticmethod
     def apply_distortion(sim_matrix: np.ndarray, ratio: float = 0.5) -> np.ndarray:
@@ -226,12 +237,15 @@ class SentenceAligner(object):
         sim = self.apply_distortion(sim, self.distortion)
 
         all_mats["fwd"], all_mats["rev"] = self.get_alignment_matrix(sim)
+        all_mats["softmax_inter"], all_mats["softmax_union"] = self.get_alignment_matrix_softmax(sim)
         all_mats["inter"] = all_mats["fwd"] * all_mats["rev"]
         all_mats["union"] = all_mats["fwd"] + all_mats["rev"]
         if "mwmf" in self.matching_methods:
             all_mats["mwmf"] = self.get_max_weight_match(sim)
         if "mwmf_union" in self.matching_methods:
             all_mats["mwmf_union"] = self.get_max_weight_match(all_mats["union"])
+        if "mwmf_soft_union" in self.matching_methods:
+            all_mats["mwmf_soft_union"] = self.get_max_weight_match(all_mats["softmax_union"])
         if "itermax" in self.matching_methods:
             all_mats["itermax"] = self.iter_max(sim)
 
