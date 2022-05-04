@@ -119,7 +119,7 @@ class SentenceAligner(object):
     @staticmethod
     def get_similarity(X: np.ndarray, Y: np.ndarray, func="cos") -> np.ndarray:
         if func == "cos":
-            return (cosine_similarity(X, Y) + 1.0) / 2.0
+            return X.dot(Y)  # return (cosine_similarity(X, Y) + 1.0) / 2.0
         else:
             return X.dot(Y)
 
