@@ -121,7 +121,7 @@ class SentenceAligner(object):
         if func == "cos":
             return (cosine_similarity(X, Y) + 1.0) / 2.0
         else:
-            return X.dot(Y.transpose())
+            return X.dot(Y)
 
     @staticmethod
     def average_embeds_over_words(bpe_vectors: np.ndarray, word_tokens_pair: List[List[str]]) -> List[np.array]:
