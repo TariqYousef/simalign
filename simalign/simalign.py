@@ -84,7 +84,7 @@ class SentenceAligner(object):
             "xlmr": "xlm-roberta-base"
         }
         all_matching_methods = {"a": "inter", "m": "mwmf", "i": "itermax", "f": "fwd", "r": "rev", "u": "union",
-                                "x": "mwmf_union", "y": "mwmf_soft_union", "z": "softmax_inter", "U": "softmax_union"}
+                                "x": "mwmf_union", "y": "mwmf_soft_union", "s": "softmax_inter", "U": "softmax_union"}
 
         self.model = model
         if model in model_names:
@@ -161,8 +161,8 @@ class SentenceAligner(object):
         forward = softmax(sim_matrix, axis=1)  # np.eye(n)[sim_matrix.argmax(axis=1)]  # m x n
         backward = softmax(sim_matrix, axis=0)  # n x m
         softmax_inter = (forward > threshold) * (backward > threshold)
-        softmax_union = (forward > threshold) + (backward > threshold)
-        return softmax_inter, softmax_union
+        # softmax_union = forward + backward  # (forward > threshold) + (backward > threshold)
+        return softmax_inter  # , softmax_union
 
     @staticmethod
     def apply_distortion(sim_matrix: np.ndarray, ratio: float = 0.5) -> np.ndarray:
@@ -237,7 +237,7 @@ class SentenceAligner(object):
         sim = self.apply_distortion(sim, self.distortion)
 
         all_mats["fwd"], all_mats["rev"] = self.get_alignment_matrix(sim)
-        all_mats["softmax_inter"], all_mats["softmax_union"] = self.get_alignment_matrix_softmax(sim)
+        all_mats["softmax_inter"] = self.get_alignment_matrix_softmax(sim)  # , all_mats["softmax_union"] =
         all_mats["inter"] = all_mats["fwd"] * all_mats["rev"]
         all_mats["union"] = all_mats["fwd"] + all_mats["rev"]
         if "mwmf" in self.matching_methods:
@@ -245,7 +245,7 @@ class SentenceAligner(object):
         if "mwmf_union" in self.matching_methods:
             all_mats["mwmf_union"] = self.get_max_weight_match(all_mats["union"])
         if "mwmf_soft_union" in self.matching_methods:
-            all_mats["mwmf_soft_union"] = self.get_max_weight_match(all_mats["softmax_union"])
+            all_mats["mwmf_soft_union"] = self.get_max_weight_match(all_mats["softmax_inter"])
         if "itermax" in self.matching_methods:
             all_mats["itermax"] = self.iter_max(sim)
 
