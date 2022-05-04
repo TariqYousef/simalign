@@ -119,9 +119,9 @@ class SentenceAligner(object):
     @staticmethod
     def get_similarity(X: np.ndarray, Y: np.ndarray, func="cos") -> np.ndarray:
         if func == "cos":
-            return X.dot(Y.transpose())  # return (cosine_similarity(X, Y) + 1.0) / 2.0
+            return cosine_similarity(X, Y)  # ( + 1.0) / 2.0
         else:
-            return X.dot(Y)
+            return X.dot(Y.transpose())  #
 
     @staticmethod
     def average_embeds_over_words(bpe_vectors: np.ndarray, word_tokens_pair: List[List[str]]) -> List[np.array]:
@@ -158,9 +158,13 @@ class SentenceAligner(object):
 
     @staticmethod
     def get_alignment_matrix_softmax(sim_matrix: np.ndarray, threshold=1e-3) -> Tuple[np.ndarray, np.ndarray]:
+        # print(sim_matrix)
         forward = softmax(sim_matrix, axis=1)  # np.eye(n)[sim_matrix.argmax(axis=1)]  # m x n
+        # print(forward)
         backward = softmax(sim_matrix, axis=0)  # n x m
         softmax_inter = (forward > threshold) * (backward > threshold)
+        # print(backward)
+        # print(softmax_inter)
         # softmax_union = forward + backward  # (forward > threshold) + (backward > threshold)
         return softmax_inter  # , softmax_union
 
@@ -209,7 +213,8 @@ class SentenceAligner(object):
             count += 1
         return inter
 
-    def get_word_aligns(self, src_sent: Union[str, List[str]], trg_sent: Union[str, List[str]]) -> Dict[str, List]:
+    def get_word_aligns(self, src_sent: Union[str, List[str]], trg_sent: Union[str, List[str]], sim_func="cos") \
+            -> Dict[str, List]:
         if isinstance(src_sent, str):
             src_sent = src_sent.split()
         if isinstance(trg_sent, str):
@@ -233,7 +238,7 @@ class SentenceAligner(object):
             vectors = self.average_embeds_over_words(vectors, [l1_tokens, l2_tokens])
 
         all_mats = {}
-        sim = self.get_similarity(vectors[0], vectors[1])
+        sim = self.get_similarity(vectors[0], vectors[1], sim_func)
         sim = self.apply_distortion(sim, self.distortion)
 
         all_mats["fwd"], all_mats["rev"] = self.get_alignment_matrix(sim)
