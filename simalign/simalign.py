@@ -9,7 +9,7 @@ from scipy.stats import entropy
 from scipy.sparse import csr_matrix
 from sklearn.preprocessing import normalize
 from sklearn.metrics.pairwise import cosine_similarity
-
+from simalign.entmax import entmax15
 try:
     import networkx as nx
     from networkx.algorithms.bipartite.matrix import from_biadjacency_matrix
@@ -84,7 +84,8 @@ class SentenceAligner(object):
             "xlmr": "xlm-roberta-base"
         }
         all_matching_methods = {"a": "inter", "m": "mwmf", "i": "itermax", "f": "fwd", "r": "rev", "u": "union",
-                                "x": "mwmf_union", "y": "mwmf_soft_union", "s": "softmax_inter", "U": "softmax_union"}
+                                "s": "softmax", "e": "entmax",
+                                "U": "softmax_union", "x": "mwmf_union", "y": "mwmf_soft_union", }
 
         self.model = model
         if model in model_names:
@@ -242,15 +243,17 @@ class SentenceAligner(object):
         sim = self.apply_distortion(sim, self.distortion)
 
         all_mats["fwd"], all_mats["rev"] = self.get_alignment_matrix(sim)
-        all_mats["softmax_inter"] = self.get_alignment_matrix_softmax(sim)  # , all_mats["softmax_union"] =
+        all_mats["softmax"] = self.get_alignment_matrix_softmax(sim)  # , all_mats["softmax_union"] =
         all_mats["inter"] = all_mats["fwd"] * all_mats["rev"]
         all_mats["union"] = all_mats["fwd"] + all_mats["rev"]
+        if "entmax" in self.matching_methods:
+            all_mats["entmax"] = entmax15(sim)
         if "mwmf" in self.matching_methods:
             all_mats["mwmf"] = self.get_max_weight_match(sim)
         if "mwmf_union" in self.matching_methods:
             all_mats["mwmf_union"] = self.get_max_weight_match(all_mats["union"])
         if "mwmf_soft_union" in self.matching_methods:
-            all_mats["mwmf_soft_union"] = self.get_max_weight_match(all_mats["softmax_inter"])
+            all_mats["mwmf_soft_union"] = self.get_max_weight_match(all_mats["softmax"])
         if "itermax" in self.matching_methods:
             all_mats["itermax"] = self.iter_max(sim)
 
