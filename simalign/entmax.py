@@ -231,7 +231,7 @@ def entmax15(X, dim=-1, k=None):
         The projection result, such that P.sum(dim=dim) == 1 elementwise.
     """
 
-    return Entmax15Function.apply(torch.from_numpy(X), dim, k)
+    return Entmax15Function.apply(X, dim, k)
 
 
 class Sparsemax(nn.Module):
