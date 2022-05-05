@@ -160,13 +160,13 @@ class SentenceAligner(object):
 
     @staticmethod
     def get_alignment_matrix_softmax(sim_matrix: np.ndarray, threshold=0.115) -> Tuple[np.ndarray, np.ndarray]:
-        print(sim_matrix)  # 1e-3
+        # print(sim_matrix)  # 1e-3
         forward = softmax(sim_matrix, axis=1)  # np.eye(n)[sim_matrix.argmax(axis=1)]  # m x n
-        print(forward)
+        # print(forward)
         backward = softmax(sim_matrix, axis=0)  # n x m
         softmax_inter = (forward > threshold) * (backward > threshold)
-        print(backward)
-        print(softmax_inter)
+        # print(backward)
+        # print(softmax_inter)
         # softmax_union = forward + backward  # (forward > threshold) + (backward > threshold)
         return softmax_inter  # , softmax_union
 
