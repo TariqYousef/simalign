@@ -242,7 +242,7 @@ class SentenceAligner(object):
 
         all_mats = {}
         sim = self.get_similarity(vectors[0], vectors[1], sim_func)
-        sim = self.apply_distortion(sim, self.distortion)
+        #sim = self.apply_distortion(sim, self.distortion)
 
         all_mats["fwd"], all_mats["rev"] = self.get_alignment_matrix(sim)
         all_mats["softmax"] = self.get_alignment_matrix_softmax(sim, threshold)  # , all_mats["softmax_union"] =
