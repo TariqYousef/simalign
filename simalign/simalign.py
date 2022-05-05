@@ -171,6 +171,19 @@ class SentenceAligner(object):
         return softmax_inter  # , softmax_union
 
     @staticmethod
+    def get_alignment_matrix_entmax(sim_matrix: np.ndarray, threshold=0.115) -> Tuple[np.ndarray, np.ndarray]:
+        # print(sim_matrix)  # 1e-3
+        sim_matrix = torch.from_numpy(sim_matrix)
+        forward = entmax15(sim_matrix, dim=1)  # np.eye(n)[sim_matrix.argmax(axis=1)]  # m x n
+        # print(forward)
+        backward = entmax15(sim_matrix, dim=0)  # n x m
+        softmax_inter = (forward > threshold) * (backward > threshold)
+        # print(backward)
+        # print(softmax_inter)
+        # softmax_union = forward + backward  # (forward > threshold) + (backward > threshold)
+        return softmax_inter  # , softmax_union
+
+    @staticmethod
     def apply_distortion(sim_matrix: np.ndarray, ratio: float = 0.5) -> np.ndarray:
         shape = sim_matrix.shape
         if (shape[0] < 2 or shape[1] < 2) or ratio == 0.0:
@@ -249,7 +262,7 @@ class SentenceAligner(object):
         all_mats["inter"] = all_mats["fwd"] * all_mats["rev"]
         all_mats["union"] = all_mats["fwd"] + all_mats["rev"]
         if "entmax" in self.matching_methods:
-            all_mats["entmax"] = entmax15(sim)
+            all_mats["entmax"] = self.get_alignment_matrix_entmax(sim, threshold)
         if "mwmf" in self.matching_methods:
             all_mats["mwmf"] = self.get_max_weight_match(sim)
         if "mwmf_union" in self.matching_methods:
