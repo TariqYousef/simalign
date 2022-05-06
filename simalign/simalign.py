@@ -167,8 +167,8 @@ class SentenceAligner(object):
         softmax_inter = (forward > threshold) * (backward > threshold)
         # print(backward)
         # print(softmax_inter)
-        # softmax_union = forward + backward  # (forward > threshold) + (backward > threshold)
-        return softmax_inter  # , softmax_union
+        softmax_union = forward + backward  # (forward > threshold) + (backward > threshold)
+        return softmax_inter, softmax_union
 
     @staticmethod
     def get_alignment_matrix_entmax(sim_matrix: np.ndarray, threshold=0.115) -> Tuple[np.ndarray, np.ndarray]:
@@ -258,7 +258,7 @@ class SentenceAligner(object):
         #sim = self.apply_distortion(sim, self.distortion)
 
         all_mats["fwd"], all_mats["rev"] = self.get_alignment_matrix(sim)
-        all_mats["softmax"] = self.get_alignment_matrix_softmax(sim, threshold)  # , all_mats["softmax_union"] =
+        all_mats["softmax"], all_mats["softmax_union"] = self.get_alignment_matrix_softmax(sim, threshold)  # , all_mats["softmax_union"] =
         all_mats["inter"] = all_mats["fwd"] * all_mats["rev"]
         all_mats["union"] = all_mats["fwd"] + all_mats["rev"]
         if "entmax" in self.matching_methods:
