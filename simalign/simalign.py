@@ -167,7 +167,7 @@ class SentenceAligner(object):
         softmax_inter = (forward > threshold) * (backward > threshold)
         # print(backward)
         # print(softmax_inter)
-        softmax_union = forward + backward  # (forward > threshold) + (backward > threshold)
+        softmax_union = (forward > threshold) + (backward > threshold)  # (forward > threshold) + (backward > threshold)
         return softmax_inter, softmax_union
 
     @staticmethod
